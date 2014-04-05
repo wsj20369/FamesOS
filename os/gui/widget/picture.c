@@ -42,20 +42,18 @@ BOOL guical gui_picture_init_private(gui_widget * pic)
         return fail;
 
     nbytes = sizeof(gui_picture_private);
-
     buf = (INT08S *)mem_alloc((INT32U)(INT32S)nbytes);
-
-    if(buf){
-        MEMSET(buf, 0, nbytes);
-        t = (gui_picture_private *)buf;/*lint !e826*/
-        InitBMPINFO(&t->bmpinfo);
-        lock_kernel();
-        pic->private_data = (void *)t;
-        unlock_kernel();
-        return ok;
-    } else {
+    if(!buf)
         return fail;
-    }
+
+    MEMSET(buf, 0, nbytes);
+    t = (gui_picture_private *)buf;/*lint !e826*/
+    InitBMPINFO(&t->bmpinfo);
+    lock_kernel();
+    pic->private_data = (void *)t;
+    unlock_kernel();
+
+    return ok;
 }
 
 /*-----------------------------------------------------------------------------------------
