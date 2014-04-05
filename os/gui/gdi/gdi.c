@@ -110,7 +110,7 @@ INT16S gdi_draw_h_image(INT16S x, INT16S y, INT16S x2, COLOR colors[])
         v = gdc_is_xline_visible(vx1, x2, y, &vx1, &vx2);
         if (v <= GDC_none)
             break;
-        X_DRAW_H_IMAGE(vx1, y, x2, colors + (vx1 - x)); /*lint !e679*/
+        X_DRAW_H_IMAGE(vx1, y, vx2, colors + (vx1 - x)); /*lint !e679*/
         vx1 = vx2 + 1;
         if (v == GDC_whole)
             break;
