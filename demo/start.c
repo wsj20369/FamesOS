@@ -81,9 +81,12 @@ gui_widget * progress1;
 
 gui_widget * dialog;
 
+gui_widget * pictures = NULL;
+
 gui_window_t * window1 = NULL;
 gui_window_t * window2 = NULL;
 gui_window_t * window3 = NULL;
+gui_window_t * pics_window = NULL;
 
 BMPINFO icon;
     
@@ -405,6 +408,69 @@ int dialog_finish(int id, char * buf, void * data, KEYCODE key)
     return 1;
 }
 
+gui_widget * init_pics_widget(void)
+{
+    gui_widget * t;
+    t = gui_create_widget(GUI_WIDGET_PICTURE, 10, 5, 320, 240, 0, 0, 0, 0x1e);
+    pictures = t;
+    if(!t)
+        goto err;
+    gui_picture_init_private(t);
+    pics_window = gui_create_window(pictures);
+    gui_show_window(pics_window);
+
+err:
+    return NULL;
+}
+
+BMPINFO * get_picture(struct student * t)
+{
+    static int inited = 0;
+    static BMPINFO a_picture, b_picture;
+
+    if (!inited) {
+        inited = 1;
+        InitBMPINFO(&a_picture);
+        InitBMPINFO(&b_picture);
+        LoadBmp(&a_picture, "a.bmp");
+        LoadBmp(&b_picture, "b.bmp");
+    }
+
+    if (!stricmp(t->name, "a"))
+        return &a_picture;
+    if (!stricmp(t->name, "b"))
+        return &b_picture;
+
+    return NULL;
+}
+
+void __task refresh_pics(void * data)
+{
+    int i = -1;
+    BMPINFO * pic, * old_pic = NULL;
+    struct student * t;
+
+    while(1) {
+        TaskSleep(10);
+        lock_kernel();
+        t = all_students;
+        unlock_kernel();
+
+        while(t) {
+            TaskSleep(10);
+            pic = get_picture(t);
+            if (pic && pic != old_pic) {
+                gui_picture_set_picture(pictures, pic);
+                old_pic = pic;
+                TaskSleep(300L);
+            }
+            lock_kernel();
+            t = t->next;
+            unlock_kernel();
+        }
+    }
+}
+
 void demo_init_gui(void)
 {
     InitBMPINFO(&icon);
@@ -414,7 +480,7 @@ void demo_init_gui(void)
     gui_desktop_enable();
     gui_desktop_set_color(CLRSCR_COLOR2);
     
-    form = gui_create_widget(GUI_WIDGET_FORM, 180, 120, 632, 500, 0, 0, 0, FORM_STYLE_XP_BORDER|FORM_STYLE_TITLE);
+    form = gui_create_widget(GUI_WIDGET_FORM, 300, 120, 632, 500, 0, 0, 0, FORM_STYLE_XP_BORDER|FORM_STYLE_TITLE);
     if(!form)
         goto err;
     gui_form_init_private(form, 128);
@@ -473,6 +539,8 @@ void demo_init_gui(void)
     window1 = gui_create_window(form);
     gui_show_window(window1);
 
+    init_pics_widget();
+
     window2 = gui_create_window(dialog);
     gui_show_window(window2);
 
@@ -528,7 +596,7 @@ void __task refresh_task(void * data)
             }
         }
 
-        if (1) {
+        if (0) {
             static int f = 0, x = 0, y = 0;
 
             if (--f <= 0) {
@@ -601,6 +669,7 @@ void __task start(void * data)
 
     demo_init_gui();
     TaskCreate(refresh_task, NULL, "refresh", NULL, 2048, 8, TASK_CREATE_OPT_NONE);
+    TaskCreate(refresh_pics, NULL, "pics", NULL, 2048, 8, TASK_CREATE_OPT_NONE);
 
     OpenConsole();
 
