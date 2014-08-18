@@ -425,21 +425,26 @@ err:
 
 BMPINFO * get_picture(struct student * t)
 {
+    #define PICTURES_NR 16  /* no more than 24 */
     static int inited = 0;
-    static BMPINFO a_picture, b_picture;
+    static BMPINFO pictures_array[PICTURES_NR];
+    char ch, * bmp_file = "a.bmp";
+    int i;
 
     if (!inited) {
         inited = 1;
-        InitBMPINFO(&a_picture);
-        InitBMPINFO(&b_picture);
-        LoadBmp(&a_picture, "a.bmp");
-        LoadBmp(&b_picture, "b.bmp");
+        for (i = 0; i < PICTURES_NR; i ++) {
+            bmp_file[0] = 'a' + i;
+            InitBMPINFO(&pictures_array[i]);
+            LoadBmp(&pictures_array[i], bmp_file);
+        }
     }
 
-    if (!stricmp(t->name, "a"))
-        return &a_picture;
-    if (!stricmp(t->name, "b"))
-        return &b_picture;
+    ch = t->name[0];
+    if (ch >= 'A' && ch <= 'Z')
+        ch += 0x20;
+    if (ch >= 'a' && ch <= 'z' && (ch - 'a' < PICTURES_NR))
+        return &pictures_array[ch - 'a'];
 
     return NULL;
 }
